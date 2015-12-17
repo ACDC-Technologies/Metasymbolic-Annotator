@@ -1,6 +1,6 @@
 ## Wikipedia Scraper 1.0.0
 ## Written by David Freiberg
-## Last updated December 12th, 2015
+## Last updated December 17th, 2015
 
 ## Global Variables:
 
@@ -52,29 +52,38 @@ headers = {"User-Agent" : "MRS Hackathon MaterialsScience Bot v3 (dnf28@drexel.e
 URLPrefix = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exsentences=10&explaintext&exlimit=20&exintro&titles="
 URLSuffix = "&format=json"
 
-path =  os.path.dirname(os.path.abspath("MathScraper.py")) + "/"
+path =  os.path.dirname(os.path.abspath("Scraper.py")) + "/"
 
 ## This creates a list of lists of the pages to be downloaded and their associated categories, and strips formatting.
 ## The PagesAndCategories file is assumed to be in the format '{"TITLE", "CATEGORY"}'.  This parser is untested for other formats.
 
-pages = codecs.open(path + "ListOfMathPagesAndCategories.txt",encoding='utf-8').read()
+pages = codecs.open(path + "ListOfPagesAndCategories.txt",encoding='utf-8').read()
 pages = pages.split("\n")
 pages = map(lambda x: x.strip("{\"}"),pages)
 pages = map(lambda x: x.split("\", \""),pages)
 
+
+## Creates a list of all of the unique page titles imported above.
+## The categories associated with these page titles are ignored in this version of the code.
 titles = list(set(map(lambda x: x[0],pages)))
 
-titlesFile = open(path + "mathTitles.txt",'a')
-summariesFile = open(path + "mathSummaries.txt",'a')
-exceptionsFile = open(path + "mathExceptions.txt",'a')
+titlesFile = open(path + "titles.txt",'a')
+summariesFile = open(path + "summaries.txt",'a')
+exceptionsFile = open(path + "exceptions.txt",'a')
 
 for i in range(0,int(math.ceil(len(titles)/20)) + 1):
+	## Defines the lower index as 20*i and the upper index as either 20*(i+1)-1 or the length of the title list.
+	## Currently, the Wikipedia API limits simultaneous summary requests to 20.
 	lowerIndex = 20*i
 	upperIndex = min(20*(i+1)-1,len(titles))
 
+	## Creates the Wikipedia query by concatenating words from the title list with '|' and replacing spaces with underscores.
 	query = "|".join(map(lambda x: x.replace(" ","_"),titles[lowerIndex:upperIndex]))
+
+	## Pushes the query, along with the prefix and suffix, to Wikipedia, and parses the JSON response.
 	JSONSummaries = urllib.urlopen(URLPrefix + query.encode('utf-8') + URLSuffix).read()
 	parsedJSONSummaries = json.loads(JSONSummaries)
+
 	for pageID in parsedJSONSummaries["query"]["pages"]:
 		try:
 			tempTitle = parsedJSONSummaries["query"]["pages"][pageID]["title"]
@@ -82,6 +91,8 @@ for i in range(0,int(math.ceil(len(titles)/20)) + 1):
 		except KeyError as e:
 			print "Exception "+str(e)+" caught between " +str(lowerIndex)+ " and " +str(upperIndex)+ " at pageID + " +pageID+"."
 			exceptionsFile.write(pageID.encode('utf-8') + "\n")
+
+			## If a download failed, write a blank line to both the summary file and the title file.
 			tempTitle = " "
 			tempSummary = " "
 		except:
