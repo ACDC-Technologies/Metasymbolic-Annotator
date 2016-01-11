@@ -6,7 +6,7 @@
 #
 # Author: Axel-Jose Persinger
 #
-# Co-Author: Christine Palmer  htmlUI() method | David Freiberg  hierarchy algorithm
+# Co-Author: Christine Palmer  htmlUI() method outline | David Freiberg  hierarchy algorithm outline
 
 
 # Imports a PDF parsing package
